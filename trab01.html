@@ -2,135 +2,138 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
-		<title>Trab01</title>
+		<title>Shooter car</title>
 		<style>
-			canvas {
-				border: 1px solid black;
-			}
 			body{
-				width: 1000px;
-				margin: auto;
+				margin: 0;
 			}
 		</style>
 	</head>
 	<body>
-	<h1>Trab01</h1>
-	<canvas width="800" height="500">
+	<canvas>
 		Seu navegador não tem suporte ao canvas!
 		Atualize seu navegador.
 	</canvas>
-
 	<script>
-		var tela = document.getElementsByTagName("canvas")[0];
-		var ctx = tela.getContext("2d");
+		var canvas = document.getElementsByTagName("canvas")[0];
+		var ctx = canvas.getContext("2d");
+		canvas.width = window.innerWidth-20;//dimension[0];
+		canvas.height = window.innerHeight-20;//dimension[1];
+
 		var fps = 50;
 		var dt = 1/fps;
+		var mousePos= {
+		        x: 0,
+		        y: 0
+		    };
+		
+		var carro = new Image();
+		carro.src = "img/carro.png";
+		carro.id = "carroImg";
+		
+		var canhao = new Image();
+		canhao.src = "img/canhao.png";
+		canhao.id = "canhao Img";
+		
+		var pc = new Sprite();
+		pc.danificado = 0;
+		pc.col = 0;
+		pc.raio = 60;
+		pc.raioCanhao = 45;
+		pc.animacaoCanhao = 0;
+		pc.animarCanhao = false;
 
-		var chao_gelo = new Image();
-		chao_gelo.src = "img/ice-floor.png"; //http://opengameart.org/content/hand-painted-texture-floor-tile
-		var chao_neve = new Image();
-		chao_neve.src = "img/snow.jpg"; //http://opengameart.org/content/tomeks-seamless-snow-textures
-		var imgTiros = new Image();
-		imgTiros.src = "img/tiros.png";
-		var boneco = new Image();
-		boneco.src = "img/boneco-neve.png"; //http://opengameart.org/content/32x32-snowman-for-isometric-tile-set
-		var personagem = new Image();
-		personagem.src = "img/personagem.png";
+		var chao = new Image();
+		chao.src = "img/chao.jpg";
 
 		var cenario = new Cenario();
-		var pc = new Sprite();
-		var inimigos = [];
-		var excluir = [];
-		var tiro = new Sprite();
-
-		tiro.y =  -12000;
-		tiro.raio = 6;
-		tiro.cor = 'yellow';
-		tiro.col = 0;
-		tiro.restricoes = function () {};
-		tiro.desenhar=function(){
-			//img, sx, sy, sw, sh, dx, dy, dw, dh
-			ctx.drawImage(imgTiros, Math.floor(this.col)*32, 0, 32, 32,
-					this.x-this.raio, this.y-this.raio, 2*this.raio, 2*this.raio);
-			
-			if(this.col >= 4)
-				this.col = 0;
-			else
-				this.col += 5*dt;
-
-		};
-
+		
 		function Cenario(){
-			this.mapa=[	[0,0,0,1,0,0,0,0,0,0],
-						[0,0,0,0,0,1,0,0,0,0],
-						[0,0,0,0,0,0,0,0,0,0],
-						[0,0,0,0,0,0,0,1,0,0],
-						[0,0,0,1,0,0,0,0,0,0],
-						[0,0,0,1,0,0,1,1,1,0],
-						[0,0,0,0,0,0,1,1,1,0],
-						[0,0,0,0,0,1,0,0,0,0],
-						[0,0,0,0,0,0,0,1,0,0],
-						[0,0,0,0,0,0,0,0,0,0]];
+			this.passo = 0;
 		} 
 
 		Cenario.prototype.desenhar = function(){
-			var i,j;
-			for(i=0;i<10;i++)
-				for(j=0;j<10;j++){
-					if(this.mapa[i][j]==0)
-						ctx.drawImage(chao_gelo, i*64, j*64);
-					else
-						ctx.drawImage(chao_neve, i*64, j*64);
-			}
+			ctx.drawImage(chao, -this.passo, 0);
+			ctx.drawImage(chao, -this.passo+800, 0);
+			ctx.drawImage(chao, -this.passo+1600, 0);
+			this.passo += dt*800;
+			if(this.passo > 800)
+				this.passo = 0;
 		}
 
+		
+
+		var inimigos = [];
+		var excluir = [];
+		var imgInimigo1 = new Image();
+		imgInimigo1.src = "img/enemy_1.png";
+		var imgTiros = new Image();
+		imgTiros.src = "img/tiro.png";
 		function criaInimigo(x, y){
 			var inimigo = new Sprite();
 			inimigo.x = x;
 			inimigo.y = y;
-			//inimigo.ay = 10;
+			inimigo.ay = 100;
 			inimigo.raio=15;
-			inimigo.col = 0;
 			inimigo.restricoes = function () {
-				if(this.y>tela.height+15){
+				if(this.y>canvas.height+15){
 					this.x = pc.x+50-Math.random()*100;
 					this.y = -30-Math.random()*150;
 					this.vy = 50-Math.random()*20;
-					this.vx = 50;
+					this.vx = 0;
 				}
 				this.ax = 0.8*(pc.x-this.x);
+				//this.ay = 0.8*(pc.y-this.y);
 			};
 			inimigo.desenhar = function(){
-				//ctx.drawImage(boneco,	this.x-this.raio,
-				//							this.y-this.raio,
-				//							2*this.raio,
-				//							2*this.raio);
-
-
-				ctx.drawImage(boneco, Math.floor(this.col)*32, 0, 32, 32,
-					this.x-this.raio, this.y-this.raio, 2*this.raio, 2*this.raio);
-			
-				if(this.col >= 2)
-					this.col = 0;
-				else
-					this.col += 1*dt;
-
-
+				/*ctx.strokeStyle = "rgb(150, 50, 50)";
+				ctx.lineWidth = 3;
+				ctx.beginPath();
+				ctx.arc(this.x, this.y, this.raio, 0, 2*Math.PI);
+				ctx.closePath();
+				ctx.stroke();*/
+				//img, x, y, w, h
+				ctx.drawImage(imgInimigo1,	this.x-this.raio,
+											this.y-this.raio,
+											2*this.raio,
+											2*this.raio);
 			};
-			inimigo.move = function(){
-				this.vx = this.vx + this.ax*dt
-				if(this.vx > 50)
-					this.vx=100;
-	 			this.x = this.x + this.vx*dt;
-	 			this.vy = this.vy + this.ay*dt;
-	 			this.y = this.y + this.vy*dt;
-			}
 			return inimigo;
 		}
 		for (var i = 0; i < 10; i++) {
 			inimigos.push(criaInimigo(100+20*i, -40*i));
 		}
+		var tiro = new Sprite();
+		tiro.y =  -12000;
+		tiro.raio = 10;
+		tiro.cor = 'yellow';
+		tiro.col = 0;
+		tiro.rotacao = 0;
+		tiro.restricoes = function () {};
+		tiro.desenhar=function(){
+			//img, sx, sy, sw, sh, dx, dy, dw, dh
 
+			ctx.save();
+			ctx.translate(this.x,this.y);
+			ctx.rotate(this.rotacao);
+
+			ctx.drawImage(imgTiros, 0, 0, 64, 64,
+					-this.raio, -this.raio, 2*this.raio, 2*this.raio);
+
+			ctx.restore();
+			
+			//if(this.col >= 4)
+			//	this.col = 0;
+			//else
+			//	this.col += 5*dt;
+
+		};
+		tiro.mover = function (){
+ 			this.vx = this.vx + this.ax*dt;
+ 			this.x = this.x + this.vx*dt;
+ 			this.vy = this.vy + this.ay*dt;
+ 			this.y = this.y + this.vy*dt;
+ 		}
 		function Sprite(){
 	 		this.x = 110;
 	 		this.y = 115;
@@ -139,35 +142,32 @@
 	 		this.ax = 0;
 	 		this.vy = 0;
 	 		this.ay = 0;
+			this.cor = 'lightgrey';
  		}
-
- 		pc.desenhar = function (){
- 			ctx.drawImage(personagem, this.x - personagem.width/2, this.y - personagem.height/2);
- 		}
-
  		Sprite.prototype.mover = function (){
- 			this.vx = this.vx + this.ax*dt - 0.2*this.vx;
+ 			this.vx = this.vx + this.ax*dt - 0.07*this.vx;
  			this.x = this.x + this.vx*dt;
- 			this.vy = this.vy + this.ay*dt- 0.2*this.vy;
+ 			this.vy = this.vy + this.ay*dt - 0.07*this.vy;
  			this.y = this.y + this.vy*dt;
  		}
-
- 		Sprite.prototype.colidiu = function (alvo) {
-			var distancia = Math.sqrt(
-						Math.pow(alvo.x - this.x, 2)+
-						Math.pow(alvo.y - this.y, 2)
-			);
-			return distancia<(alvo.raio+this.raio);
+ 		Sprite.prototype.desenhar = function (){
+			ctx.fillStyle = this.cor;
+			ctx.strokeStyle = "rgb(150, 50, 50)";
+			ctx.lineWidth = 3;
+			ctx.beginPath();
+			ctx.arc(this.x, this.y, this.raio, 0, 2*Math.PI);
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
 		}
-
 		Sprite.prototype.restricoes = function(){
 			if(this.x<15){
 				this.x = 15;
 				this.vx = 0;
 				this.ax = 0;
 			}
-			if(this.x>tela.width-15) {
-				this.x=tela.width-15;
+			if(this.x>canvas.width-15) {
+				this.x=canvas.width-15;
 				this.vx = 0;
 				this.ax = 0;
 			}
@@ -176,97 +176,183 @@
 				this.vy = 0;
 				this.ay = 0;
 			}
-			if(this.y>tela.height-15) {
-				this.y=tela.height-15;
+			if(this.y>canvas.height-15) {
+				this.y=canvas.height-15;
 				this.vy = 0;
 				this.ay = 0;
 			}
-
-			if( cenario.mapa[Math.floor(this.x/64)][Math.floor(this.y/64)]==1){
-				this.vx = 0;
-				this.ax=0;
-				this.ay=0;
-			}
 		}
+		Sprite.prototype.colidiuComCircular = function (alvo) {
+			var distancia = Math.sqrt(
+						Math.pow(alvo.x - this.x, 2)+
+						Math.pow(alvo.y - this.y, 2)
+			);
+			return distancia<(alvo.raio+this.raio);
+		};
+		
+		pc.desenhar=function(){
+			//img, sx, sy, sw, sh, dx, dy, dw, dh
+			var rotacao = this.vy/1000;
+
+			ctx.save();
+			ctx.translate(this.x,this.y);
+			ctx.rotate(rotacao);
+
+			var linha;
+			if(this.ax<0)
+				linha = 1;
+			else
+				linha = 0;
+
+			ctx.drawImage(carro, Math.floor(this.col)*128, linha*128, 128, 128,
+					-this.raio, -this.raio, 2*this.raio, 2*this.raio);
+
+			ctx.restore();
+			
+			if(this.col >= 4)
+				this.col = 0;
+			else
+				this.col += 50*dt;
+
+			rotacao = Math.atan((this.y - mousePos.y)/(this.x - mousePos.x));
+			if(mousePos.x < this.x)
+				rotacao +=Math.PI;
+
+			ctx.save();
+			ctx.translate(this.x,this.y);
+			ctx.rotate(rotacao);
+
+			if(this.animarCanhao){
+				this.animacaoCanhao+=dt;
+				if(this.animacaoCanhao>0.1){
+					this.animacaoCanhao=0;
+					this.animarCanhao=false;
+				}
+				ctx.drawImage(canhao, 128, 0, 128, 128,
+					-this.raioCanhao, -this.raioCanhao, 2*this.raioCanhao, 2*this.raioCanhao, rotacao);
+			}
+			else{
+				ctx.drawImage(canhao, 0, 0, 128, 128,
+					-this.raioCanhao, -this.raioCanhao, 2*this.raioCanhao, 2*this.raioCanhao, rotacao);
+			}
+
+			ctx.restore();
+
+		};
 
 		function passo(){
 			pc.mover();
-			for (var i in inimigos) {
-				inimigos[i].mover();
-			}
+			//for (var i in inimigos) {
+			//	inimigos[i].mover();
+			//}
 			tiro.mover();
 			pc.restricoes();
-			for (var i in inimigos) {
-				inimigos[i].restricoes();
-			}
+			//for (var i in inimigos) {
+			//	inimigos[i].restricoes();
+			//}
 			tiro.restricoes();
-
- 			ctx.clearRect(0,0, tela.width, tela.height);
-
+			//Limpar a tela
+ 			ctx.clearRect(0,0, canvas.width, canvas.height);
+			//for (var i in inimigos) {
+			//	inimigos[i].desenhar();
+			//}
 			cenario.desenhar();
-
-			for (var i in inimigos) {
-				inimigos[i].desenhar();
-			}
-
-			pc.desenhar();
-
 			tiro.desenhar();
-
+			pc.desenhar();
 			for (var i in inimigos) {
-				//if(pc.danificado<=0 && pc.colidiu(inimigos[i])){
-					//pc.danificado = 2;
-				//	inimigos[i].y = 1200;
-				//}
-				if(tiro.colidiu(inimigos[i])){
+				if(pc.danificado<=0 && pc.colidiuComCircular(inimigos[i])){
+					pc.danificado = 2;
 					inimigos[i].y = 1200;
-					//excluir.push(inimigos[i]);
+				}
+				if(tiro.colidiuComCircular(inimigos[i])){
+					inimigos[i].y = 1200;
+					excluir.push(inimigos[i]);
 					tiro.y = -1200;
 				}
 			}
-			
+			//for(var e in excluir){
+			//	inimigos.splice(inimigos.indexOf(excluir[e]),1);
+			//}
+			//excluir = [];
 		}
-
 		function teclaPressionada(e){
+			console.log("Tecla Pressionada: " + e.keyCode);
 			switch(e.keyCode){
-				case 32:
-					if(tiro.y < -10){
-						tiro.x = pc.x;
-						tiro.y = pc.y;
-						tiro.vy = -200;
-					}
+				//case 32:
+				//	if(tiro.y < -10){
+				//		tiro.x = pc.x;
+				//		tiro.y = pc.y;
+				//		tiro.vy = -200;
+				//	}
+				//break;
+				case 65: //a
+					pc.ax = -1000;
 				break;
-				case 37:
-					pc.ax = -300;
+				case 68: //d
+					pc.ax = 1000;
 				break;
-				case 39:
-					pc.ax = 300;
+				case 87: //w
+					pc.ay = -1000;
 				break;
-				case 38:
-					pc.ay = -300;
-				break;
-				case 40:
-					pc.ay = 300;
+				case 83: //s
+					pc.ay = 1000;
 				break;
 			}
 		}
-
 		function teclaSolta(e){
-				switch(e.keyCode){
-				case 37:
-				case 39:
+			console.log("Tecla Solta: " + e.keyCode);
+			switch(e.keyCode){
+				case 65:
+				case 68:
 					pc.ax = 0;
 					break;
-				case 38:
-				case 40:
+				case 87:
+				case 83:
 					pc.ay = 0;
 				break;
 			}
+		} 
+
+		function updateMousePos(e){
+			var obj = canvas;
+		    var top = 0;
+		    var left = 0;
+		    while (obj && obj.tagName != 'BODY') {
+                    top += obj.offsetTop;
+                    left += obj.offsetLeft;
+                    obj = obj.offsetParent;
+                }
+		  
+		    var mouseX = e.clientX - left + window.pageXOffset;
+		    var mouseY = e.clientY - top + window.pageYOffset;
+		    mousePos = {
+		        x: mouseX,
+		        y: mouseY
+		    };
 		}
 
+		function mousePressionado(e){
+			console.log("Mouse pressionado");
+			tiro.x = pc.x;
+			tiro.y = pc.y;
+			var rotacao = Math.atan((tiro.y - mousePos.y)/(tiro.x - mousePos.x));
+			if(mousePos.x < tiro.x)
+				rotacao +=Math.PI;
+			tiro.vy = 700*Math.sin(rotacao);
+			tiro.vx = 700*Math.cos(rotacao);
+			tiro.rotacao = rotacao;
+			pc.animarCanhao = true;
+			pc.animacaoCanhao = 0;
+			
+		}
+		
 		setInterval(passo, 1000/fps);
 		addEventListener("keydown", teclaPressionada);
 		addEventListener("keyup", teclaSolta);
+		addEventListener("mousemove", updateMousePos, false);
+		addEventListener("mousedown", mousePressionado, false);
+
+		
 
 	</script>
 	</body>
